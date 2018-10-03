@@ -10,8 +10,8 @@ class QuestionEdition extends React.Component {
     itemsList: [],
     colsList: [],
     rowsList: [],
-    longestRow: {},
-    longestCol: {},
+    longestRow: '',
+    longestCol: '',
   }
 
   componentDidMount() {
@@ -20,9 +20,8 @@ class QuestionEdition extends React.Component {
       itemsList: items,
       colsList: items.filter(item => item.type === 'col'),
       rowsList: items.filter(item => item.type === 'row'),
-      longestCol: this.findLongestItem(items.filter(item => item.type === 'col')).title,
-      longestRow: this.findLongestItem(items.filter(item => item.type === 'row')).title,
     })
+    this.updateLongestItems(items);
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -66,31 +65,30 @@ class QuestionEdition extends React.Component {
   }
 
   findLongestItem = (arr) => {
-    return arr.reduce((a, b) => {
-      return a.title.length > b.title.length ? a : b; 
-    });
+    if (arr.length > 0) {
+      const item =arr.reduce((a, b) => {
+        return a.title.length > b.title.length ? a : b; 
+      });
+      return item.title;
+    }
   }
 
   onItemTitleChange = (title, el) => {
-    localeStore.save(this.state.itemsList.map(item => 
-      (item.id === el.id) ? {...item, title} : item
-    ))
+    this.setState({
+      itemsList: this.state.itemsList.map(item => 
+        (item.id === el.id) ? {...item, title} : item
+      )
+    }, () => {
+      localeStore.save(this.state.itemsList);
+      this.updateLongestItems(this.state.itemsList);
+    })
+  }
 
-    if (el.type === 'row') {
-      if (title.length > this.state.longestRow.length) {
-        this.setState({
-          longestRow: title,
-        })
-      }
-    }
-
-    if (el.type === 'col') {
-      if (title.length > this.state.longestCol.length) {
-        this.setState({
-          longestCol: title,
-        })
-      }
-    }
+  updateLongestItems = (items) => {
+    this.setState({
+      longestCol: this.findLongestItem(items.filter(item => item.type === 'col')),
+      longestRow: this.findLongestItem(items.filter(item => item.type === 'row')),
+    })
   }
 
   addCol = () => {
@@ -103,6 +101,8 @@ class QuestionEdition extends React.Component {
     this.setState({
       itemsList: [...this.state.itemsList, newColItem],
       colsList: [...this.state.colsList, newColItem],
+    }, () => {
+      this.updateLongestItems(this.state.itemsList);
     });
   }
 
@@ -116,6 +116,8 @@ class QuestionEdition extends React.Component {
     this.setState({
       itemsList: [...this.state.itemsList, newRowItem],
       rowsList: [...this.state.rowsList, newRowItem],
+    }, () => {
+      this.updateLongestItems(this.state.itemsList);
     });
   }
 
@@ -128,6 +130,7 @@ class QuestionEdition extends React.Component {
         colsList: this.state.itemsList.filter(item => item.type === 'col'),
         rowsList: this.state.itemsList.filter(item => item.type === 'row'),
       })
+      this.updateLongestItems(this.state.itemsList);
     })
   }
 
